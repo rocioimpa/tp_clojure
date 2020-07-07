@@ -1,6 +1,9 @@
 # tp_clojure
 
-Trabajo Práctico de Teoría del Lenguaje (75.31) 
+Trabajo Práctico de Teoría del Lenguaje (75.31)
+ 
+Lenguaje elegido: Clojure
+
 Facultad de Ingeniería - Universidad de Buenos Aires
 
 1er Cuatrimestre 2020
@@ -15,17 +18,20 @@ git clone https://github.com/rocioimpa/tp_clojure.git
 ## Usage
 
 Por una cuestión de compatibilidad con la librería HTTP, la versión de JDK debe ser 8 o inferior.
+
 Una vez descargado, posicionarse sobre la carpeta `tp_clojure` y ejecutar el siguiente comando en la terminal:
 ```
 lein run
 ```
 Una vez que el servidor inicie, en la terminal aparecerá el mensaje "Server started at port 8080"
+
 Acceder desde el navegador a http://localhost:8080
+
 Se mostrará la hora actual
 
 ## Options
 
-FIXME: listing of options this app accepts.
+
 
 ## Examples
 
@@ -35,13 +41,9 @@ FIXME: listing of options this app accepts.
 
 ...
 
-### Any Other Sections
-### That You Think
-### Might be Useful
-
 ## License
 
-Copyright © 2020 FIXME
+Copyright © 2020
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
