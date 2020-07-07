@@ -1,16 +1,27 @@
 # tp_clojure
 
-FIXME: description
+Trabajo Práctico de Teoría del Lenguaje (75.31) 
+Facultad de Ingeniería - Universidad de Buenos Aires
+
+1er Cuatrimestre 2020
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Descargar el repositorio de git usando clone:
+```
+git clone https://github.com/rocioimpa/tp_clojure.git
+```
 
 ## Usage
 
-FIXME: explanation
-
-    $ java -jar tp_clojure-0.1.0-standalone.jar [args]
+Por una cuestión de compatibilidad con la librería HTTP, la versión de JDK debe ser 8 o inferior.
+Una vez descargado, posicionarse sobre la carpeta `tp_clojure` y ejecutar el siguiente comando en la terminal:
+```
+lein run
+```
+Una vez que el servidor inicie, en la terminal aparecerá el mensaje "Server started at port 8080"
+Acceder desde el navegador a http://localhost:8080
+Se mostrará la hora actual
 
 ## Options
 
