@@ -1,15 +1,29 @@
 (ns tp-clojure.core
-  (:require [org.httpkit.server :refer [run-server]]
-            [clj-time.core :as t]))
+  (:gen-class)
+  (:require [clojure-csv.core :as csvcore]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io]))
 
-(defn app [req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (str (t/time-now))})
+;(defn app [req]
+; {:status  200
+; :headers {"Content-Type" "text/html"}
+;:body    (str (t/time-now))})
 
-(defn -main 
+(defn process-csv [file]
+  (with-open [in-file (clojure.java.io/reader file)]
+    (doall
+     (clojure.data.csv/read-csv in-file))))
+
+
+(defn take-csv
+  [file]
+  (with-open  [rdr  (io/reader file)]
+    (csvcore/parse-csv rdr)))
+
+(defn -main
   "I don't do a whole lot ... yet."
-  [& args]
+  [&]
   (println "Hello, World!")
-  (run-server app {:port 8080})
+  (println (process-csv "./data/survey_results_public.csv"))
+;(run-server app {:port 8080})
   (println "Server started at port 8080"))
