@@ -5,9 +5,14 @@
 
 
 
+;function that open csv to read one column into vector
+(defn read-column [filename column-index]
+  (with-open [reader (io/reader (io/resource filename))]
+    (let [data (csv/read-csv reader)]
+      ;mapv is not lazy, to avoid csv not open exception
+      (mapv #(nth % column-index) data))))
 
-
-;function that take all csv in memory
+;function that take all csv data in memory
 (defn read-all-dataset [arg]
   (with-open [reader (io/reader (io/resource arg))]
     (doall
@@ -21,11 +26,17 @@
        (rest csv-data))
   )
 
+
 (def filename "dataset.csv")
+(def names (read-column filename 2))
+(def durations (read-column filename 9))
 (def csvdata (read-all-dataset filename))
 (def dataset (csv-data->maps csvdata))
 
+
 (defn -main [& args]
+  (println names)
+  (println durations)
   (run! println dataset)
   )
 
