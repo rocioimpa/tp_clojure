@@ -33,11 +33,23 @@
 (def csvdata (read-all-dataset filename))
 (def dataset (csv-data->maps csvdata))
 
+;function to parse int
+(defn parse-int [s]
+  (Integer. (re-find  #"\d+" s )))
+
+;function that calculate the average
+(defn average [numbers]
+  (/ (reduce + numbers) (count numbers)))
+
+(def movies-duration-average
+  (average (map #( parse-int (:duration %)) (filter #(= (:type %) "Movie") dataset))))
+
 
 (defn -main [& args]
   (println names)
   (println durations)
-  (run! println dataset)
+  ;(run! println dataset)
+  (println (format "La duracion promedio de las peliculas es de: %.3f minutos" (double movies-duration-average)))
   )
 
 
