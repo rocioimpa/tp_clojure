@@ -1,4 +1,9 @@
 (ns tp-clojure.core
+  (:import (java.io RandomAccessFile))
+  (:import (java.io BufferedReader))
+  (:import (java.io FileInputStream))
+  (:import (java.io BufferedInputStream))
+  (:import (java.io InputStreamReader))
   (:require [clojure.java.io :as io]
             [clojure.data.csv :as csv]
             [mikera.vectorz.core :as v]))
@@ -37,19 +42,73 @@
 (defn parse-int [s]
   (Integer. (re-find  #"\d+" s )))
 
-;function that calculate the average
+;function average
 (defn average [numbers]
   (/ (reduce + numbers) (count numbers)))
 
 (def movies-duration-average
   (average (map #( parse-int (:duration %)) (filter #(= (:type %) "Movie") dataset))))
 
+;function that print movies duration average
+(defn print-movies-duration-avarage []
+  (print "Columna de duraciones =")(println durations)
+  ;(print "El dataset como diccionario =")(run! println dataset)
+  (println (format "La duracion promedio de las peliculas es de: %.3f minutos" (double movies-duration-average)))
+  )
+
+
+;Partitions a file into n line-aligned chunks.
+;Returns a list of start and end byte offset pairs.
+(defn chunk-file  [filename n]
+  (with-open [file (RandomAccessFile. filename "r")]
+    (let [offsets (for [offset (range 0 (.length file) (/ (.length file) n))]
+                    (do (when-not (zero? offset)
+                          (.seek file offset)
+                          (while (not= (.read file) (int \newline))))
+                      (.getFilePointer file)))
+          offsets (concat offsets [(.length file)])]
+      (doall (partition 2 (interleave offsets (rest offsets)))))))
+
+(def csv-path
+  (apply str [(System/getProperty "user.dir") "/resources/dataset.csv"]))
+
+
+; Returns a lazy sequence of lines from file between start-byte and end-byte.
+(defn read-lines-range [file start-byte end-byte]
+
+  (let [reader (-> (doto (FileInputStream. file)
+                         (.skip start-byte))
+                   (BufferedInputStream. 131072)
+                   (InputStreamReader. "US-ASCII")
+                   (BufferedReader.))]
+    (letfn [(gobble-lines [remaining]
+                          (lazy-seq
+                            (if-let [line (and (pos? remaining) (.readLine reader))]
+                              (cons line (gobble-lines (- remaining (.length line))))
+                              (.close reader))))]
+      (gobble-lines (- end-byte start-byte)))))
+
+(def number-of-file-partitions 2)
+(def first-file-part 0)
+(def second-file-part 1)
+(defn read-file-chunks []
+  (println "")
+  (println "Dividimos el archivo en dos partes con la misma cantidad de lineas:")
+  (def file-bytes-division (chunk-file csv-path number-of-file-partitions))
+  (print "La primer parte ")
+  (println  (let [[start end](nth file-bytes-division first-file-part)]
+              (println (format "empieza en %s y termina en los %s bytes....." start end))
+              (read-lines-range  (io/file csv-path) start end)))
+  (print "La segunda parte ")
+  (println  (let [[start end](nth file-bytes-division second-file-part)]
+              (println (format "empieza en %s y termina en los %s bytes....." start end))
+              (read-lines-range  (io/file csv-path) start end)))
+  )
+
 
 (defn -main [& args]
-  (println names)
-  (println durations)
-  ;(run! println dataset)
-  (println (format "La duracion promedio de las peliculas es de: %.3f minutos" (double movies-duration-average)))
+  (print-movies-duration-avarage)
+  (read-file-chunks)
   )
 
 
