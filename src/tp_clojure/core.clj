@@ -5,8 +5,16 @@
   
 
   (def movie-durations ())
-  ;(def average-duration (promise))
-
+  (def average-duration (promise))
+  
+  (defn filterGenre [map]
+  (filter (fn [entry] (= (:genre entry) "Adventure")) map))
+  
+  (defn sumaRuntime [mapa]
+    (->> mapa
+         (map :runtime)
+         (reduce +))
+    )
   (defn split [sep s]
     (clojure.string/split s sep))
 
@@ -26,11 +34,13 @@
   (let [contents (slurp filepath)]
     (maps #"," contents)))
 
-(def filepath "resources/dataset.csv")    
+(def filepath "resources/movies_1.csv")    
 (def stored-data (read-csv filepath))  
 (def names (get stored-data "title"))
+(def resultado (filterGenre stored-data))
 
 (defn -main [& args]
   (println stored-data)
-;  (println (deref average-duration))
+  ;(resultado)
+  ;(println (deref average-duration)))
 )
