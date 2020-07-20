@@ -13,6 +13,9 @@
 
   (defn sum-runtime [mapa]
     (reduce + (map (fn [entry] (+ (parse-int (get entry ":runtime")))) mapa)))
+  
+(defn calculate-max-votes [mapa]
+ (reduce max (map (fn [entry] (+ (parse-int (get entry ":votes")))) mapa)))
 
   (defn split [sep s]
     (clojure.string/split s sep))
@@ -40,7 +43,9 @@
 (def movies-amount (count stored-data))
 (def total-sum (sum-runtime stored-data))
 (def average-runtime (calculate-average-runtime total-sum movies-amount))
+(def maxVotes (calculate-max-votes stored-data))
 
 (defn -main [& args]
   (println average-runtime)
+  ;(println maxVotes)
 )
