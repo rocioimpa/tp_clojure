@@ -1,7 +1,7 @@
  (ns tp-clojure.core
   (:require [clojure-csv.core :as csv])
   (:require [clojure.java.io :as io]))
- 
+
   (defn calculate-average-runtime [total-sum, amount]
     (double (/ total-sum amount)))
 
@@ -13,7 +13,7 @@
 
   (defn sum-runtime [mapa]
     (reduce + (map (fn [entry] (+ (parse-int (get entry ":runtime")))) mapa)))
-  
+
 (defn calculate-max-votes [mapa]
  (reduce max (map (fn [entry] (+ (parse-int (get entry ":votes")))) mapa)))
 
@@ -36,16 +36,39 @@
   (let [contents (slurp filepath)]
     (maps #"," contents)))
 
+(defn sum-key [data key]
+  (reduce + (map (fn [entry] (+ (parse-int (get entry key)))) data))
+)
+
+(defn calculate-average-key [data key]
+  (double (/ (sum-key data key) (count data)))
+)
+
+(defn count-values [data key]
+  (map (fn [x] (list (first x) (count (second x)))) (group-by (fn [movie] (get movie key)) data))
+)
+
+
+
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
 (def names (get stored-data "title"))
 (def resultado (filterGenre stored-data))
 (def movies-amount (count stored-data))
 (def total-sum (sum-runtime stored-data))
-(def average-runtime (calculate-average-runtime total-sum movies-amount))
+(def average-runtime (calculate-average-key stored-data ":runtime"))
+(def average-budget (calculate-average-key stored-data ":budget"))
+(def cv-genre (count-values stored-data ":genre"))
+(def cv-company (count-values stored-data ":company"))
 (def maxVotes (calculate-max-votes stored-data))
 
 (defn -main [& args]
-  (println average-runtime)
+  ;(println stored-data)
+  (println "promedio de runtime:" average-runtime)
+  (println "promedio de budget:" average-budget)
+  (println "count-values genre:" (count-values stored-data ":genre") )
+  (println "count-values company:" (count-values stored-data ":company") )
+
   ;(println maxVotes)
+  (shutdown-agents)
 )
