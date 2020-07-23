@@ -57,7 +57,7 @@
 )
 
 (defn calculate-average-key [data key]
-  (double (/ (sum-key data key) (count data)))
+  (.intValue (double (/ (sum-key data key) (count data))))
 )
 
 (defn count-values [data key]
@@ -68,12 +68,28 @@
   (doseq [keyval (first data)] (println (key keyval) "type: "(type (val keyval)) ))
 )
 
-;(derive :types/float ::numero)
-;(derive :types/integer ::numero)
-;(derive :types/string  ::cadena)
+(defn obtener-info-columna-cadena [data key]
+  (println key "Valores mas frecuentes:" (take 3 (sort-by #(- (second %)) (count-values data key))))
+)
 
-;(defmulti obtenerInfoColumna (fn [data key])
-;)
+(defn obtener-info-columna-numero [data key]
+  (println key "Valor promedio:" (calculate-average-key data key))
+)
+
+;Establezco dependencias para el dispatch del multimethod.
+(derive java.lang.Double ::numero)
+(derive java.lang.Integer ::numero)
+(derive java.lang.String  ::cadena)
+
+(defmulti obtener-info-columna (fn [data key] (type (get (first data) key)) ))
+(defmethod obtener-info-columna ::cadena [data key] (obtener-info-columna-cadena data key) )
+(defmethod obtener-info-columna ::numero [data key] (obtener-info-columna-numero data key ))
+
+(defn obtener-info [data]
+  (doseq [keyval (first data)]
+    (obtener-info-columna data (key keyval))
+    )
+)
 
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
@@ -90,12 +106,10 @@
 
 (defn -main [& args]
   ;(println stored-data)
-  (print-col-types stored-data)
-  (println "promedio de runtime:" average-runtime)
-  (println "promedio de budget:" average-budget)
-  (println "count-values genre:" cv-genre )
-
-  ;(println "count-values company:" (count-values stored-data ":company") )
+  ;(print-col-types stored-data)
+  (obtener-info stored-data)
+  ;(println "promedio de runtime:" average-runtime)
+  ;(println "count-values genre:" cv-genre )
 
   ;(println maxVotes)
   (shutdown-agents)
