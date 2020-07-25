@@ -52,28 +52,28 @@
   (reduce + (map (fn [entry] (+  (get entry key))) data))
 )
 
-(defn columns [data]
-  (keys (first data))
-)
+;(defn columns [data]
+;  (keys (first data))
+;)
 
 (defn calculate-average-key [data key]
-  (.intValue (double (/ (sum-key data key) (count data))))
+  (format "%.2f" (double (/ (sum-key data key) (count data))))
 )
 
 (defn count-values [data key]
   (map (fn [x] (list (first x) (count (second x)))) (group-by (fn [movie] (get movie key)) data))
 )
 
-(defn print-col-types [data]
-  (doseq [keyval (first data)] (println (key keyval) "type: "(type (val keyval)) ))
-)
+;(defn print-col-types [data]
+;  (doseq [keyval (first data)] (println (key keyval) "type: "(type (val keyval)) ))
+;)
 
 (defn obtener-info-columna-cadena [data key]
-  (println key "Valores mas frecuentes:" (take 3 (sort-by #(- (second %)) (count-values data key))))
+  (list key "Valores mas frecuentes:" (take 3 (sort-by #(- (second %)) (count-values data key))))
 )
 
 (defn obtener-info-columna-numero [data key]
-  (println key "Valor promedio:" (calculate-average-key data key))
+  (list key "Valor promedio:" (calculate-average-key data key))
 )
 
 ;Establezco dependencias para el dispatch del multimethod.
@@ -86,28 +86,83 @@
 (defmethod obtener-info-columna ::numero [data key] (obtener-info-columna-numero data key ))
 
 (defn obtener-info [data]
-  (doseq [keyval (first data)]
-    (obtener-info-columna data (key keyval))
+  (map (fn [clave] (obtener-info-columna data clave)) (keys (first data)))
+)
+
+(defn imprimir-listas [listas]
+  ;Imprime prolijamente una lista de listas
+  (doseq [lista listas]
+    (apply println lista))
+  )
+
+(defn imprimir-info-por-grupo [data-agrupado]
+  ;Secuencial, sin hilos
+  (doseq [grupo data-agrupado]
+    (println "GRUPO:" (first grupo))
+    (imprimir-listas (obtener-info (second grupo)))
+    (println " ")
     )
 )
+
+(defn imprimir-info-por-grupo-descoordinado [data-agrupado]
+  ;Con hilos desincronizados creados con futures
+  (doseq [grupo data-agrupado]
+    (println "GRUPO:" (first grupo) )
+    (future (imprimir-listas (obtener-info (second grupo))))
+    (println " ")
+    )
+)
+
+(defn actualizar-resultado [resultado-total nombre-grupo resultado-parcial]
+  (concat resultado-total (list (list "\nGrupo:" nombre-grupo)) resultado-parcial )
+  )
+
+(defn imprimir-info-por-grupo-usando-atomo [data-agrupado]
+  ;Con hilos creados con future, sincronizando el resultado mediante un atom.
+  (def resultado (atom (list)))
+  (doseq [grupo data-agrupado]
+    (future (swap! resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo)))))
+    )
+  ;Problema: no hay forma de saber cuando todos los hilos terminaron. Por eso luego usamos refs.
+  (imprimir-listas @resultado)
+)
+
+(defn imprimir-info-por-grupo-usando-refs [data-agrupado]
+  ;Con hilos creados con future, comunicandose mediante refs
+  (def resultado (ref (list)))
+  (def hilos-terminados (ref 0))
+  (def cant-grupos (count data-agrupado))
+  (doseq [grupo data-agrupado]
+    (future
+      (dosync
+        (alter resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo))))
+        (alter hilos-terminados inc)
+        ;Si todos los hilos terminaron, imprimo el resultado.
+        (if (= @hilos-terminados cant-grupos) (imprimir-listas @resultado))
+      )
+    )
+  )
+)
+
 
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
 (def names (get stored-data "title"))
-(def resultado (filterGenre stored-data))
 (def movies-amount (count stored-data))
 (def total-sum (sum-runtime stored-data))
 (def average-runtime (calculate-average-key stored-data ":runtime"))
 (def average-budget (calculate-average-key stored-data ":budget"))
-(def cv-genre (count-values stored-data ":genre"))
-(def cv-company (count-values stored-data ":company"))
+
 (def maxVotes (calculate-max-votes stored-data))
 
 
 (defn -main [& args]
+
   ;(println stored-data)
   ;(print-col-types stored-data)
-  (obtener-info stored-data)
+
+  ;(imprimir-listas (obtener-info stored-data))
+  (imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(println "promedio de runtime:" average-runtime)
   ;(println "count-values genre:" cv-genre )
 
