@@ -45,8 +45,9 @@
   )
 
 (defn read-csv [filepath]
-  (let [contents (slurp filepath)]
-    (parser-tipos (maps #"," contents)) ))
+  (try (let [contents (slurp filepath)]
+         (parser-tipos (maps #"," contents)))
+       (catch Exception e (println (str "Caught Exception: " (.getMessage e))))))
 
 (defn sum-key [data key]
   (reduce + (map (fn [entry] (+  (get entry key))) data))
@@ -143,7 +144,6 @@
     )
   )
 )
-
 
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
