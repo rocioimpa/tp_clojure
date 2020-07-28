@@ -87,7 +87,9 @@
 (defmethod obtener-info-columna ::numero [data key] (obtener-info-columna-numero data key ))
 
 (defn obtener-info [data]
-  (map (fn [clave] (obtener-info-columna data clave)) (keys (first data)))
+  (for [clave (keys (first data))]
+    (obtener-info-columna data clave)
+    )
 )
 
 (defn imprimir-listas [listas]
@@ -106,7 +108,7 @@
 )
 
 (defn imprimir-info-por-grupo-descoordinado [data-agrupado]
-  ;Con hilos desincronizados creados con futures
+  ;Con hilos descoordinados creados con futures
   (doseq [grupo data-agrupado]
     (println "GRUPO:" (first grupo) )
     (future (imprimir-listas (obtener-info (second grupo))))
