@@ -77,14 +77,60 @@
   (future (count numbers)))
 
 
+(defn use-futureeeees [results]
+  (def vec-one (vector 5 10 6))
+  (def vec-two (vector 4 3 7))
+  (def future-count-one (count-all-future vec-one))
+  (def future-sum-one (sum-all-future vec-one))
+  (def future-count-two (count-all-future vec-two))
+  (def future-sum-two (sum-all-future vec-two))
+  (def future-count (sum-all-future
+                     (vector
+                      (deref future-count-one)
+                      (deref future-count-two))))
+  (def future-sum (sum-all-future
+                   (vector
+                    (deref future-sum-one)
+                    (deref future-sum-two))))
+  (println "suma: " (deref future-sum))
+  (println "count: " (deref future-count))
+  (println (format "El promedio usando futures es: %.3f "
+                   (double
+                    (average
+                     (deref future-sum) (deref future-count))))))
+
+(defn merge-results [results]
+  (println "merge-results")
+  (println (format "hola %s" results))
+  ( for [res results]
+    (
+      ;(println (format "hola %s" res))
+      ( let [{:keys [count sum]} (res)]
+        ;(println (format " [%d,%d]" (deref count) (deref sum)))
+        ( + count sum )
+        )
+      )
+    )
+  ;(println "termino")
+  )
+
+
+
+(defn get-sum-and-count [nums]
+  (println "get-sum-and-count")
+  (def future-count (count-all-future nums))
+  (def future-sum (sum-all-future nums))
+  ;{ :count future-count  :sum future-sum }
+  { :count 3  :sum 5 }
+  )
+
+
 (defn use-futures []
   (def vec-one (vector 5 10 6))
   (def vec-two (vector 4 3 7))
-  (def future-count (count-all-future vec-one))
-  (def future-sum (sum-all-future vec-one))
-  (println (format "El promedio usando futures es: %.3f "
-                   (double
-                    (average  (deref future-sum)  (deref future-count))))))
+  (def results (vector (get-sum-and-count vec-one) (get-sum-and-count vec-two)))
+  (println (format "%s" (merge-results (seq results))))
+  )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
