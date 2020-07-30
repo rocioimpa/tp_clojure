@@ -6,5 +6,10 @@
                  [clojure-csv/clojure-csv "2.0.1"]
                  [http-kit "2.2.0"]
                  [clj-time "0.14.0"]
-                 [net.mikera/vectorz-clj "0.48.0"]]
+                 [net.mikera/vectorz-clj "0.48.0"]
+                 [compojure "1.6.1"]             ; Routing library
+                 [http-kit "2.3.0"]              ; HTTP Library for client/server
+                 [ring/ring-defaults "0.3.2"]    ; Ring defaults - for query params
+                 [org.clojure/data.json "0.2.6"] ; Clojure data.JSON library
+                 ]
   :main tp-clojure.core)
