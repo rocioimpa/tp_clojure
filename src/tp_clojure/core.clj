@@ -155,25 +155,23 @@
   )
 )
 
-  ; Simple Body Page
-  (defn simple-body-page [req]
-    {:status  200
-     :headers {"Content-Type" "text/html"}
-     :body    "Trabajo Práctico Clojure - Teoría del Lenguaje FIUBA"})
+(defn simple-body-page [req]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    "Trabajo Práctico Clojure - Teoría del Lenguaje FIUBA"})
   
-  ; request-example
   (defn request-example [req]
        {:status  200
         :headers {"Content-Type" "text/html"}
-        :body    (->>
-                  (pp/pprint req)
-                  (str "Request Object: " req))})
-
+        :body (->>
+              (pp/pprint req)
+              (str "Request Object: " req))})
 
 (defroutes app-routes
-                    (GET "/" [] simple-body-page)
-                    (GET "/request" [] request-example)
-                    (route/not-found "Error, page not found!"))                
+  (GET "/" [] simple-body-page)
+  (GET "/request" [] request-example)
+  (route/not-found "Error, page not found!"))    
+
 
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
@@ -182,16 +180,12 @@
 (def total-sum (sum-runtime stored-data))
 (def average-runtime (calculate-average-key stored-data ":runtime"))
 (def average-budget (calculate-average-key stored-data ":budget"))
-
 (def maxVotes (calculate-max-votes stored-data))
 
 
 (defn -main [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
-    ; Run the server with Ring.defaults middleware
     (server/run-server (wrap-defaults #'app-routes site-defaults) {:port port})
-    ; Run the server without ring defaults
-    ;(server/run-server #'app-routes {:port port})
     (println (str "Running webserver at http:/127.0.0.1:" port "/")))
 
   ;(println stored-data)
