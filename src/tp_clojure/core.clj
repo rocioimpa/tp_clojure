@@ -155,24 +155,6 @@
   )
 )
 
-(defn simple-body-page [req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    "Trabajo Práctico Clojure - Teoría del Lenguaje FIUBA"})
-  
-  (defn request-example [req]
-       {:status  200
-        :headers {"Content-Type" "text/html"}
-        :body (->>
-              (pp/pprint req)
-              (str "Request Object: " req))})
-
-(defroutes app-routes
-  (GET "/" [] simple-body-page)
-  (GET "/request" [] request-example)
-  (route/not-found "Error, page not found!"))    
-
-
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
 (def names (get stored-data "title"))
@@ -182,6 +164,28 @@
 (def average-budget (calculate-average-key stored-data ":budget"))
 (def maxVotes (calculate-max-votes stored-data))
 
+(defn simple-body-page [req]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    "Trabajo Práctico Clojure - Teoría del Lenguaje FIUBA"})
+  
+(defn say-hello [req]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body (->>
+         (str "Hello, " (:name (:params req))))})
+
+(defn request-example [req]
+  {:status  200
+   :headers {"Content-Type" "text/json"}
+   :body (->>
+         (str (json/write-str "")))})
+
+(defroutes app-routes
+  (GET "/" [] simple-body-page)
+  (GET "/request" [] request-example)
+  (GET "/hello" [] say-hello)
+  (route/not-found "Error, page not found!"))   
 
 (defn -main [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
@@ -192,7 +196,7 @@
   ;(print-col-types stored-data)
 
   ;(imprimir-listas (obtener-info stored-data))
-  (imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
+  ;(imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(println "promedio de runtime:" average-runtime)
   ;(println "count-values genre:" cv-genre )
 
