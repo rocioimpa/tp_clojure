@@ -155,6 +155,19 @@
   )
 )
 
+(defn imprimir-info-por-grupo-usando-agents [data-agrupado]
+  (def resultado (ref (list)))
+  (def hilos-terminados (agent 0))
+  (def cant-grupos (count data-agrupado))
+   (doseq [grupo data-agrupado]
+     (future
+       (dosync
+        (alter resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo))))
+        (send-off hilos-terminados + 1))
+       (println (imprimir-listas @resultado))
+        ;Si todos los hilos terminaron, imprimo el resultado.
+        (if (= @hilos-terminados cant-grupos) (imprimir-listas @resultado)))))
+
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
 (def names (get stored-data "title"))
@@ -194,7 +207,7 @@
 
   ;(println stored-data)
   ;(print-col-types stored-data)
-
+  ;(imprimir-info-por-grupo-usando-agents (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(imprimir-listas (obtener-info stored-data))
   ;(imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(println "promedio de runtime:" average-runtime)
@@ -202,4 +215,4 @@
 
   ;(println maxVotes)
   (shutdown-agents)
-)
+  )
