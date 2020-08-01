@@ -23,11 +23,10 @@ Una vez descargado, posicionarse sobre la carpeta `tp_clojure` y ejecutar el sig
 ```
 lein run
 ```
-Una vez que el servidor inicie, en la terminal aparecerá el mensaje "Server started at port 8080"
+Una vez que el servidor inicie, en la terminal aparecerá el mensaje "Webserver corriendo en http:/127.0.0.1:3000/"
 
-Acceder desde el navegador a http://localhost:8080
+Acceder desde el navegador a http://localhost:3000
 
-Se mostrará la hora actual
 
 ## Options
 

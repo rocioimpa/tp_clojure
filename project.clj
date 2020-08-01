@@ -10,6 +10,5 @@
                  [compojure "1.6.1"]             ; Routing library
                  [http-kit "2.3.0"]              ; HTTP Library for client/server
                  [ring/ring-defaults "0.3.2"]    ; Ring defaults - for query params
-                 [org.clojure/data.json "0.2.6"] ; Clojure data.JSON library
-                 ]
+                 [org.clojure/data.json "0.2.6"]]; Clojure data.JSON library 
   :main tp-clojure.core)
