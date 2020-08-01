@@ -177,34 +177,31 @@
 (def average-budget (calculate-average-key stored-data ":budget"))
 (def maxVotes (calculate-max-votes stored-data))
 
-(defn simple-body-page [req]
+(defn default-page [req]
   {:status  200
    :headers {"Content-Type" "text/html"}
-   :body    "Trabajo Práctico Clojure - Teoría del Lenguaje FIUBA"})
-  
-(defn say-hello [req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body (->>
-         (str "Hello, " (:name (:params req))))})
+   :body    "<h1>Trabajo Práctico Clojure</h1>
+            <h2>FIUBA - Teoría del Lenguaje (75.31)</h2>
+             <ul>
+             <li>Aieta, Noelia</li>
+             <li>Ferreiro, Jazmin</li>
+             <li>Impaglione, Rocío</li>
+             <li>Ortiz, Luciano</li>
+             </ul>
+   "}) 
 
-(defn request-example [req]
+(defn show-results [req]
   {:status  200
    :headers {"Content-Type" "text/json"}
    :body (->>
-         (str (json/write-str "")))})
+         (str (json/write-str (obtener-info stored-data))))})
 
 (defroutes app-routes
-  (GET "/" [] simple-body-page)
-  (GET "/request" [] request-example)
-  (GET "/hello" [] say-hello)
-  (route/not-found "Error, page not found!"))   
+  (GET "/" [] default-page)
+  (GET "/results" [] show-results)
+  (route/not-found "ERROR 404, no se encontró la página!"))   
 
 (defn -main [& args]
-  (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
-    (server/run-server (wrap-defaults #'app-routes site-defaults) {:port port})
-    (println (str "Running webserver at http:/127.0.0.1:" port "/")))
-
   ;(println stored-data)
   ;(print-col-types stored-data)
   ;(imprimir-info-por-grupo-usando-agents (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
@@ -212,6 +209,10 @@
   ;(imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(println "promedio de runtime:" average-runtime)
   ;(println "count-values genre:" cv-genre )
+
+  (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
+    (server/run-server (wrap-defaults #'app-routes site-defaults) {:port port})
+    (println (str "Webserver corriendo en http:/127.0.0.1:" port "/")))
 
   ;(println maxVotes)
   (shutdown-agents)
