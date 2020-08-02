@@ -128,15 +128,26 @@
   (concat resultado-total (list (list "\nGrupo:" nombre-grupo)) resultado-parcial )
   )
 
-(defn imprimir-info-por-grupo-usando-atomo [data-agrupado]
+(defn imprimir-info-por-grupo-usando-atoms [data-agrupado]
   ;Con hilos creados con future, sincronizando el resultado mediante un atom.
   (def resultado (atom (list)))
-  (doseq [grupo data-agrupado]
-    (future (swap! resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo)))))
+  (let [futures-list
+        (doall
+         (map (fn [grupo]
+                (future (swap! resultado (fn [total] (actualizar-resultado total (first grupo) (obtener-info (second grupo)))))))
+              data-agrupado)
+         )
+        ]
+    (doseq [completion futures-list] @completion)
     )
-  ;Problema: no hay forma de saber cuando todos los hilos terminaron. Por eso luego usamos refs.
   (imprimir-listas @resultado)
 )
+
+
+
+
+
+
 
 (defn imprimir-info-por-grupo-usando-refs [data-agrupado]
   ;Con hilos creados con future, comunicandose mediante refs
@@ -204,6 +215,7 @@
 (defn -main [& args]
   ;(println stored-data)
   ;(print-col-types stored-data)
+  (imprimir-info-por-grupo-usando-atoms (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(imprimir-info-por-grupo-usando-agents (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
   ;(imprimir-listas (obtener-info stored-data))
   ;(imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
