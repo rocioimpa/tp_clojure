@@ -145,8 +145,8 @@
               data-agrupado)
          )
         ]
-    (doseq [completion futures-list] @completion)
     )
+  (await resultado)
   (imprimir-listas @resultado)
   )
 
