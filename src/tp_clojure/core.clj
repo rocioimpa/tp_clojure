@@ -137,17 +137,19 @@
 )
 
 (defn imprimir-info-por-grupo-usando-agents [data-agrupado]
-  (def resultado (ref (list)))
-  (def hilos-terminados (agent 0))
-  (def cant-grupos (count data-agrupado))
-   (doseq [grupo data-agrupado]
-     (future
-       (dosync
-        (alter resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo))))
-        (send-off hilos-terminados + 1))
-       (println (imprimir-listas @resultado))
-        ;Si todos los hilos terminaron, imprimo el resultado.
-        (if (= @hilos-terminados cant-grupos) (imprimir-listas @resultado)))))
+  (def resultado (agent (list)))
+  (let [futures-list
+        (doall
+         (map (fn [grupo]
+                (future (send resultado (fn [total] (actualizar-resultado total (first grupo) (obtener-info (second grupo)))))))
+              data-agrupado)
+         )
+        ]
+    (doseq [completion futures-list] @completion)
+    )
+  (imprimir-listas @resultado)
+  )
+
 
 (def filepath "resources/movies_1.csv")
 (def stored-data (read-csv filepath))
@@ -155,8 +157,8 @@
 (defn -main [& args]
 
   ;(imprimir-info-por-grupo-usando-atoms (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
-  ;(imprimir-info-por-grupo-usando-agents (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
-  (imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
+  (imprimir-info-por-grupo-usando-agents (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
+  ;(imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
 
   (shutdown-agents)
   )
