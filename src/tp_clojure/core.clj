@@ -1,118 +1,198 @@
-(ns tp-clojure.core
-  (:import (java.io RandomAccessFile))
-  (:import (java.io BufferedReader))
-  (:import (java.io FileInputStream))
-  (:import (java.io BufferedInputStream))
-  (:import (java.io InputStreamReader))
-  (:require [clojure.java.io :as io]
-            [clojure.data.csv :as csv]
-            [mikera.vectorz.core :as v]))
+ (ns tp-clojure.core
+  (:require [clojure-csv.core :as csv])
+  (:require [clojure.java.io :as io]))
 
+  (defn calculate-average-runtime [total-sum, amount]
+    (double (/ total-sum amount)))
 
+  (defn filterGenre [map]
+  (filter (fn [entry] (= (get entry ":genre") "Adventure")) map))
 
-;function that open csv to read one column into vector
-(defn read-column [filename column-index]
-  (with-open [reader (io/reader (io/resource filename))]
-    (let [data (csv/read-csv reader)]
-      ;mapv is not lazy, to avoid csv not open exception
-      (mapv #(nth % column-index) data))))
+  (defn parse-int [s]
+    (Integer. (re-find  #"\d+" s )))
 
-;function that take all csv data in memory
-(defn read-all-dataset [arg]
-  (with-open [reader (io/reader (io/resource arg))]
-    (doall
-     (csv/read-csv reader)))
+  (defn sum-runtime [mapa]
+    (reduce + (map (fn [entry] (+ (get entry ":runtime"))) mapa)))
+
+(defn calculate-max-votes [mapa]
+ (reduce max (map (fn [entry] (+ (get entry ":votes"))) mapa)))
+
+  (defn split [sep s]
+    (clojure.string/split s sep))
+
+  (defn lines [sep contents]
+    (->> contents
+      (split #"\n")
+        (map (partial split sep))))
+
+  (defn maps [sep contents]
+    (let [lines (lines sep contents)
+          cols (first lines)
+          rows (rest lines)]
+        ;(print lines) ;uncomment this to print the lines
+      (map (partial zipmap cols) rows)))
+
+(defn parser-tipos [data]
+  (map (fn [fila]
+          (-> fila (update ":budget" #(.intValue (Double. %)))
+                   (update ":gross" #(.intValue (Double. %)))
+                   (update ":runtime" #(Integer. %))
+                   (update ":score" #(Double. %))
+                   (update ":votes" #(Integer. %))
+                   (update ":year" #(Integer. %))
+          )
+        ) data)
   )
 
-;function that read data from csv (already readed) and transform in file in dictionary
-(defn csv-data->maps [csv-data]
-  (map zipmap
-       (repeat (map keyword (first csv-data)))
-       (rest csv-data))
+(defn read-csv [filepath]
+  (try (let [contents (slurp filepath)]
+         (parser-tipos (maps #"," contents)))
+       (catch Exception e (println (str "Caught Exception: " (.getMessage e))))))
+
+(defn sum-key [data key]
+  (reduce + (map (fn [entry] (+  (get entry key))) data))
+)
+
+;(defn columns [data]
+;  (keys (first data))
+;)
+
+(defn calculate-average-key [data key]
+  (format "%.2f" (double (/ (sum-key data key) (count data))))
+)
+
+(defn count-values [data key]
+  (map (fn [x] (list (first x) (count (second x)))) (group-by (fn [movie] (get movie key)) data))
+)
+
+;(defn print-col-types [data]
+;  (doseq [keyval (first data)] (println (key keyval) "type: "(type (val keyval)) ))
+;)
+
+(defn obtener-info-columna-cadena [data key]
+  (list key "Valores mas frecuentes:" (take 3 (sort-by #(- (second %)) (count-values data key))))
+)
+
+(defn obtener-info-columna-numero [data key]
+  (list key "Valor promedio:" (calculate-average-key data key))
+)
+
+;Establezco dependencias para el dispatch del multimethod.
+(derive java.lang.Double ::numero)
+(derive java.lang.Integer ::numero)
+(derive java.lang.String  ::cadena)
+
+(defmulti obtener-info-columna (fn [data key] (type (get (first data) key)) ))
+(defmethod obtener-info-columna ::cadena [data key] (obtener-info-columna-cadena data key) )
+(defmethod obtener-info-columna ::numero [data key] (obtener-info-columna-numero data key ))
+
+(defn obtener-info [data]
+  (for [clave (keys (first data))]
+    (obtener-info-columna data clave)
+    )
+)
+
+(defn imprimir-listas [listas]
+  ;Imprime prolijamente una lista de listas
+  (doseq [lista listas]
+    (apply println lista))
   )
 
+(defn imprimir-info-por-grupo [data-agrupado]
+  ;Secuencial, sin hilos
+  (doseq [grupo data-agrupado]
+    (println "GRUPO:" (first grupo))
+    (imprimir-listas (obtener-info (second grupo)))
+    (println " ")
+    )
+)
 
-(def filename "dataset.csv")
-(def names (read-column filename 2))
-(def durations (read-column filename 9))
-(def csvdata (read-all-dataset filename))
-(def dataset (csv-data->maps csvdata))
+(defn imprimir-info-por-grupo-descoordinado [data-agrupado]
+  ;Con hilos descoordinados creados con futures
+  (doseq [grupo data-agrupado]
+    (println "GRUPO:" (first grupo) )
+    (future (imprimir-listas (obtener-info (second grupo))))
+    (println " ")
+    )
+)
 
-;function to parse int
-(defn parse-int [s]
-  (Integer. (re-find  #"\d+" s )))
-
-;function average
-(defn average [numbers]
-  (/ (reduce + numbers) (count numbers)))
-
-(def movies-duration-average
-  (average (map #( parse-int (:duration %)) (filter #(= (:type %) "Movie") dataset))))
-
-;function that print movies duration average
-(defn print-movies-duration-avarage []
-  (print "Columna de duraciones =")(println durations)
-  ;(print "El dataset como diccionario =")(run! println dataset)
-  (println (format "La duracion promedio de las peliculas es de: %.3f minutos" (double movies-duration-average)))
+(defn actualizar-resultado [resultado-total nombre-grupo resultado-parcial]
+  (concat resultado-total (list (list "\nGrupo:" nombre-grupo)) resultado-parcial )
   )
 
+(defn imprimir-info-por-grupo-usando-atoms [data-agrupado]
+  ;Con hilos creados con future, sincronizando el resultado mediante un atom.
+  (def resultado (atom (list)))
+  (let [futures-list
+        (doall
+         (map (fn [grupo]
+                (future (swap! resultado (fn [total] (actualizar-resultado total (first grupo) (obtener-info (second grupo)))))))
+              data-agrupado)
+         )
+        ]
+    (doseq [completion futures-list] @completion)
+    )
+  (imprimir-listas @resultado)
+)
 
-;Partitions a file into n line-aligned chunks.
-;Returns a list of start and end byte offset pairs.
-(defn chunk-file  [filename n]
-  (with-open [file (RandomAccessFile. filename "r")]
-    (let [offsets (for [offset (range 0 (.length file) (/ (.length file) n))]
-                    (do (when-not (zero? offset)
-                          (.seek file offset)
-                          (while (not= (.read file) (int \newline))))
-                      (.getFilePointer file)))
-          offsets (concat offsets [(.length file)])]
-      (doall (partition 2 (interleave offsets (rest offsets)))))))
-
-(def csv-path
-  (apply str [(System/getProperty "user.dir") "/resources/dataset.csv"]))
 
 
-; Returns a lazy sequence of lines from file between start-byte and end-byte.
-(defn read-lines-range [file start-byte end-byte]
 
-  (let [reader (-> (doto (FileInputStream. file)
-                         (.skip start-byte))
-                   (BufferedInputStream. 131072)
-                   (InputStreamReader. "US-ASCII")
-                   (BufferedReader.))]
-    (letfn [(gobble-lines [remaining]
-                          (lazy-seq
-                            (if-let [line (and (pos? remaining) (.readLine reader))]
-                              (cons line (gobble-lines (- remaining (.length line))))
-                              (.close reader))))]
-      (gobble-lines (- end-byte start-byte)))))
 
-(def number-of-file-partitions 2)
-(def first-file-part 0)
-(def second-file-part 1)
-(defn read-file-chunks []
-  (println "")
-  (println "Dividimos el archivo en dos partes con la misma cantidad de lineas:")
-  (def file-bytes-division (chunk-file csv-path number-of-file-partitions))
-  (print "La primer parte ")
-  (println  (let [[start end](nth file-bytes-division first-file-part)]
-              (println (format "empieza en %s y termina en los %s bytes....." start end))
-              (read-lines-range  (io/file csv-path) start end)))
-  (print "La segunda parte ")
-  (println  (let [[start end](nth file-bytes-division second-file-part)]
-              (println (format "empieza en %s y termina en los %s bytes....." start end))
-              (read-lines-range  (io/file csv-path) start end)))
+
+
+(defn imprimir-info-por-grupo-usando-refs [data-agrupado]
+  ;Con hilos creados con future, comunicandose mediante refs
+  (def resultado (ref (list)))
+  (def hilos-terminados (ref 0))
+  (def cant-grupos (count data-agrupado))
+  (doseq [grupo data-agrupado]
+    (future
+      (dosync
+        (alter resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo))))
+        (alter hilos-terminados inc)
+        ;Si todos los hilos terminaron, imprimo el resultado.
+        (if (= @hilos-terminados cant-grupos) (imprimir-listas @resultado))
+      )
+    )
   )
+)
+
+(defn imprimir-info-por-grupo-usando-agents [data-agrupado]
+  (def resultado (ref (list)))
+  (def hilos-terminados (agent 0))
+  (def cant-grupos (count data-agrupado))
+   (doseq [grupo data-agrupado]
+     (future
+       (dosync
+        (alter resultado #(actualizar-resultado % (first grupo) (obtener-info (second grupo))))
+        (send-off hilos-terminados + 1))
+       (println (imprimir-listas @resultado))
+        ;Si todos los hilos terminaron, imprimo el resultado.
+        (if (= @hilos-terminados cant-grupos) (imprimir-listas @resultado)))))
+
+(def filepath "resources/movies_1.csv")
+(def stored-data (read-csv filepath))
+(def names (get stored-data "title"))
+(def movies-amount (count stored-data))
+(def total-sum (sum-runtime stored-data))
+(def average-runtime (calculate-average-key stored-data ":runtime"))
+(def average-budget (calculate-average-key stored-data ":budget"))
+
+(def maxVotes (calculate-max-votes stored-data))
 
 
 (defn -main [& args]
-  (print-movies-duration-avarage)
-  (read-file-chunks)
+
+  ;(println stored-data)
+  ;(print-col-types stored-data)
+  (imprimir-info-por-grupo-usando-atoms (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
+  ;(imprimir-info-por-grupo-usando-agents (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
+  ;(imprimir-listas (obtener-info stored-data))
+  ;(imprimir-info-por-grupo-usando-refs (group-by (fn [entry] (Math/round (get entry ":score"))) stored-data))
+  ;(println "promedio de runtime:" average-runtime)
+  ;(println "count-values genre:" cv-genre )
+
+  ;(println maxVotes)
+  (shutdown-agents)
   )
-
-
-
-
-
-
