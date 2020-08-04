@@ -23,23 +23,8 @@ Una vez descargado, posicionarse sobre la carpeta `tp_clojure` y ejecutar el sig
 ```
 lein run
 ```
-Una vez que el servidor inicie, en la terminal aparecerá el mensaje "Server started at port 8080"
 
-Acceder desde el navegador a http://localhost:8080
-
-Se mostrará la hora actual
-
-## Options
-
-
-
-## Examples
-
-...
-
-### Bugs
-
-...
+Se mostrará información del dataset de peliculas agrupado segun su puntaje
 
 ## License
 
